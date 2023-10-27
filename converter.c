@@ -13,6 +13,37 @@ int lsb(U64 bit) { // Returns the number of trailing zeros of any 64 bit binary 
     return count;
 }
 
+void move_to_string(int move){
+    int from = move & 63;
+    int to = (move>>6) & 63;
+    int piecetype = (move>>12)&15;
+    int captured = (move>>16)&1;
+    int movetype = (move>>17)&3;
+    int promotion = (move>>19)&3;
+
+    char file_from = (7-from%8)+97;
+    char rank_from = (from/8)+49;
+    char file_to = (7-to%8)+97;
+    char rank_to = (to/8)+49;
+
+    char promoted_to = ' ';
+    char type_of_move;
+    switch(movetype){
+        case 0: type_of_move = 'N'; break;
+        case 1: type_of_move = 'C'; break;
+        case 2: type_of_move = 'E'; break;
+        case 3: type_of_move = 'P';
+            switch(promotion){
+                case 0: promoted_to = 'q'; break;
+                case 1: promoted_to = 'n'; break;
+                case 2: promoted_to = 'b'; break;
+                case 3: promoted_to = 'r'; break;
+            }break;
+    }
+    char notated_move[6];
+    sprintf(notated_move,"%c%c%c%c%c%c",file_from, rank_from, file_to, rank_to, promoted_to, type_of_move);
+    printf("%s ",notated_move);
+}
 void arrayToBitBoard(int rank, int file, char chessboard[rank][file]){
     BR = BN = BB = BQ = BK = BP = WR = WN = WB = WQ = WK = WP = 0ULL;
     for (int rank = 0; rank < 8; rank++) {

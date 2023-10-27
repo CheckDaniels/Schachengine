@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <stdint.h>
+
 typedef uint_fast64_t U64;
 
 // Files //
@@ -31,25 +32,25 @@ extern const U64 Rank8;
 extern const U64 Whiteside;
 extern const U64 Blackside;
 
-extern const U64 mainDiagonal;
+extern const U64 mainSDiagonal;
 extern const U64 mainADiagonal;
 
 // Diagonals //
-extern const U64 D1;
-extern const U64 D2;
-extern const U64 D3;
-extern const U64 D4;
-extern const U64 D5;
-extern const U64 D6;
-extern const U64 D7;
-//(D8 = mainADiagonal)
-extern const U64 D9;
-extern const U64 D10;
-extern const U64 D11;
-extern const U64 D12;
-extern const U64 D13;
-extern const U64 D14;
-extern const U64 D15;
+extern const U64 SD1;
+extern const U64 SD2;
+extern const U64 SD3;
+extern const U64 SD4;
+extern const U64 SD5;
+extern const U64 SD6;
+extern const U64 SD7;
+//(D8 = mainSDiagonal)
+extern const U64 SD9;
+extern const U64 SD10;
+extern const U64 SD11;
+extern const U64 SD12;
+extern const U64 SD13;
+extern const U64 SD14;
+extern const U64 SD15;
 
 // Anti-Diagonals //
 extern const U64 AD1;
@@ -59,7 +60,7 @@ extern const U64 AD4;
 extern const U64 AD5;
 extern const U64 AD6;
 extern const U64 AD7;
-//(AD8 = mainDiagonal)
+//(AD8 = mainADiagonal)
 extern const U64 AD9;
 extern const U64 AD10;
 extern const U64 AD11;
@@ -68,13 +69,39 @@ extern const U64 AD13;
 extern const U64 AD14;
 extern const U64 AD15;
 
-extern const U64 vMask[];
-extern const U64 hMask[];
-extern const U64 dMask[];
-extern const U64 aMask[];
+extern const U64 V_mask[];
+extern const U64 H_mask[];
+extern const U64 SD_mask[];
+extern const U64 AD_mask[];
 
 extern const U64 KnightSpan;
 extern const U64 KingSpan;
+
+// Squares //
+
+extern const U64 B1;
+extern const U64 C1;
+extern const U64 D1;
+extern const U64 E1;
+extern const U64 F1;
+extern const U64 G1;
+
+extern const U64 B1C1D1;
+extern const U64 F1G1;
+//extern const U64 C1D1E1;
+//extern const U64 E1F1G1;
+
+extern const U64 B8;
+extern const U64 C8;
+extern const U64 D8;
+extern const U64 E8;
+extern const U64 F8;
+extern const U64 G8;
+
+extern const U64 B8C8D8;
+extern const U64 F8G8;
+//extern const U64 C8D8E8;
+//extern const U64 E8F8G8;
 /*
      * 1000000100000000000000000000000000000000000000000000000000000000
      * 0100001000000000000000000000000000000000000000000000000000000000
@@ -90,6 +117,8 @@ extern const U64 KingSpan;
      * 0000000000000000000000000000000000000000000000001111111100000000
      * 0000000000000000111111111111111111111111111111110000000000000000
 */
+
+extern U64 *Bitboard[];
 extern U64 BR;
 extern U64 BN;
 extern U64 BB;
@@ -107,7 +136,7 @@ extern U64 WP;
 //U64 WHITE_PIECES;
 //U64 BLACK_PIECES;
 
-void BitBoard();
+void init_BitBoard();
 
 
 //?int moveList[1024][2];

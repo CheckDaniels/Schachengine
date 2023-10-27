@@ -1,12 +1,11 @@
-//
-// Created by Checker_24 on 22.10.2023.
-//
 #include "board.h"
 #include "move_gen.h"
+#include "converter.h"
+#include "benchmarking.h"
 
 
 int main(){
-    BitBoard();
+    init_BitBoard();
     printf("Array elements: \n");
     //genWPawn(WP);
     //genBPawn();
@@ -14,12 +13,18 @@ int main(){
     //genQueen(WQ);
     //genKnight(WN);
     //genKing(WK);
-    move_generator(0);
-    //int listsize = sizeof(movelist)/sizeof(movelist[0]);
-    for (int i = 0; i < listindex; i++) {
-        //printf("%d, ", movelist[i]);
-        move_notation(movelist[i]);
-    }
-
+    //start();
+    move_generator();
+    //stop();
+    //printf("%d",square_attacked(F1));
+    //int listsize = sizeof(search_list)/sizeof(search_list[0]);
+    for (int i = 0; i < move_index; i++) {
+        //printf("%d, ", search_list[i]);
+        move_to_string(search_list[ply][i]);
+        printf("\n");
+        make_move(&search_list[ply][i]);
+        printBoard();
+        make_move(&search_list[ply][i]);
+    }printf("\n");
     return 0;
 }
