@@ -1,55 +1,69 @@
 #pragma once
 #include "board.h"
 #include <stdbool.h>
-#define my_side WHITE
-#define op_side (1-WHITE)
 
 
+extern U64 OCCUPIED;
+extern U64 EMPTY;
+extern U64 ENEMY_PIECES;
+extern U64 NOT_MY_PIECES;
 
-// creates a move_list for unmaking moves
-typedef struct{
-    //reversible information
-    int move;
-    //irreversible information
-    int captures;
-    int en_passant;
-    int castling;
-    int fifty;
-    int hash;
-}move_history;
-
-
-extern bool WHITE; //switching: with (1-WHITE)
 extern bool WK_NOT_MOVED;
 extern bool BK_NOT_MOVED;
 extern bool RH1_NOT_MOVED;
 extern bool RA1_NOT_MOVED;
 extern bool RH8_NOT_MOVED;
 extern bool RA8_NOT_MOVED;
+extern bool Enpassant_possibility;
+extern int doublePawnpushFile; // 0:FileH, 1:FileG, ..., 7:FileA
+
+enum PIECETYPE : int{
+    BLACKPAWN,
+    BLACKKNIGHT = 1<<12,
+    BLACKBISHOP = 2<<12,
+    BLACKROOK = 3<<12,
+    BLACKQUEEN = 4<<12,
+    BLACKKING = 5<<12,
+    WHITEPAWN = 6<<12,
+    WHITEKNIGHT = 7<<12,
+    WHITEBISHOP = 8<<12,
+    WHITEROOK = 9<<12,
+    WHITEQUEEN = 10<<12,
+    WHITEKING = 11<<12
+};
+enum FLAGS : int{
+    NONE,
+    CAPTURE = 1 << 16,
+    DOUBLEPAWNPUSH = 1<<21
+};
+enum MUMIE : int{
+    NORMAL,
+    CASTLING = 1 << 17,
+    ENPASSANT = 2 << 17,
+    PROMOTION = 3 << 17
+};
+enum PROMOTION_TYPE : int{
+    KNIGHT,
+    BISHOP = 1 << 19,
+    ROOK = 2 << 19,
+    QUEEN = 3 << 19
+};
+enum CAPTURED_PIECE : int{
+    CAPT_BLACKPAWN,
+    CAPT_BLACKKNIGHT = 1<<23,
+    CAPT_BLACKBISHOP = 2<<23,
+    CAPT_BLACKROOK = 3<<23,
+    CAPT_BLACKQUEEN = 4<<23,
+    CAPT_BLACKKING = 5<<23,
+    CAPT_WHITEPAWN = 6<<23,
+    CAPT_WHITEKNIGHT = 7<<23,
+    CAPT_WHITEBISHOP = 8<<23,
+    CAPT_WHITEROOK = 9<<23,
+    CAPT_WHITEQUEEN = 10<<23,
+    CAPT_WHITEKING = 11<<23
+};
 
 
-// int search_list[][]; Stores the generated moves for each ply inside an 2D array in int format
-// 32 bits are enough to store all the important data of a move
-// Bit: 0-5     6-11    12-15       16             17-18                                   19-20               (21)         (22-25) only for unmaking moves
-//      from    to      Piece type  |CaptureFlag|  (None/Castling/Promotion/en passant)    Promotion:N/B/R/Q   (UnmakeFlag) (captured_Piece: BP/BN/BR/BQ/BK/WP/WN/WB/WR/WQ/WK)
-//                                  |Castling-side| = King-side/Queen-side
-// captured pieces will be added after the move has been made in make_move()
-// Piece types: {BP, BN, BB, BR, BQ, BK, WP, WN, WB, WR, WQ, WK}
-
-extern int search_list[][256];
-extern int *move_list;
-extern int move_index;
-extern int ply;
-
-//game_list: is the search_list with additional information:
-//captured pieces, en passant, castling-rights and fifty-move rule
-//which is needed for unmake_move()
-extern int game_list[16];
-extern int *g_move;
-
-
-bool make_move(int* move);//make_move if(to==ENEMY)
-//void unmake_move();
 void move_generator();
 void genWPawn();
 void genBPawn();
@@ -65,6 +79,5 @@ void genKing(U64 KBB);
 
 void genWCastling();
 void genBCastling();
-void king_safety();
 bool square_attacked(U64 square);
 

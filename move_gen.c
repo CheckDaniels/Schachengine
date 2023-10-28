@@ -1,35 +1,17 @@
-#include <stdlib.h>
 #include "move_gen.h"
 #include "board.h"
 #include "converter.h"
-#include <stdbool.h>
-#include "benchmarking.h"
+#include "search.h"
 
-bool WHITE = true;
+
 bool WK_NOT_MOVED = true;
 bool BK_NOT_MOVED = true;
 bool RH1_NOT_MOVED = true;
 bool RA1_NOT_MOVED = true;
 bool RH8_NOT_MOVED = true;
 bool RA8_NOT_MOVED = true;
-
-U64 reverse_bytes(U64 BitB){
-    //reverses the bytes, not the bits, therefor reverses the rank order
-    //for macOS and Linux: #include <arpa/inet.h>   return be64toh(BB);
-    return _byteswap_uint64(BitB);
-}
-U64 reverse_rank(U64 BitB, int rank){ // BitB: Bitboard
-    //reverses one rank
-    U64 reversedRank = 0;
-    BitB >>= rank*8;                    // shifts the rank to the first bit
-    for (int i = 0; i < 8; i++) {
-        reversedRank <<= 1;             // left-shifts reversedRank to make room for the next bit
-        reversedRank |= (BitB & 1);     // Set the least significant bit of reversedRank to the least significant bit of BitB
-        BitB >>= 1;                     // right-shifts the BitB to process the next bit
-    }
-    reversedRank <<= rank*8;            // shifts the rank back
-    return reversedRank;
-}
+bool Enpassant_possibility = true;
+int doublePawnpushFile = 3;
 
 U64 OCCUPIED;
 U64 EMPTY;
@@ -37,102 +19,9 @@ U64 ENEMY_PIECES;
 U64 NOT_MY_PIECES;
 
 
-// Bit: 0-5    6-11    12-15       16          17-18                                   19-20                (21)         (22-25) only for unmaking moves
-//      from   to      Piece_type  CaptureFlag (None/Castling/En passant/Promotion)    Promotion:N/B/R/Q    (UnmakeFlag) (captured_Piece: BP/BN/BR/BQ/BK/WP/WN/WB/WR/WQ/WK)
-// Piece types: {BP, BN, BB, BR, BQ, BK, WP, WN, WB, WR, WQ, WK}
-
-int search_list[16][256];
-int *move_list;
-int move_index;
-int ply;
-
-//int game_list[16];
-//int *g_move;
-
-
-
-bool make_move(int* move){
-    int from = (*move) & 63;
-    int to = (*move>>6) & 63;
-    int Piece = (*move>>12)&15;
-    int CaptureFlag = (*move>>16)&1;
-    int movetype = (*move >> 17) & 3;
-    int promotion_Piece = (*move>>19)&3;
-    int UnmakeFlag = (*move>>21)&1;
-    int capt_Piece = (*move>>22)&15;
-    U64* King = Bitboard[5+my_side*6];
-
-    if(movetype == 0){
-        // Normal Move //
-        //do nothing
-
-    }else if(movetype == 1){
-    // Castling //
-    // is only moving the king, the rook is moved as a regular move
-
-        if(UnmakeFlag){
-            if(CaptureFlag == 0) { //unmake king-side castling
-                *King <<= 2;
-            }else{ //unmake queen-side castling
-                *King >>= 2;
-            }
-        }else {
-            if(CaptureFlag == 0){ // king-side castling
-                if(square_attacked(*King)|square_attacked((*King)>>1)|square_attacked((*King)>>2)){
-                    // return make_move(int next_move); //CASTLING_FAILED
-                }else{
-                    *King >>= 2;
-                    UnmakeFlag = 1; //although it is no unmake move, to avoid king-safety check
-                }
-            }else{// queen-side castling
-                if(square_attacked(*King)|square_attacked((*King)<<1)|square_attacked((*King)<<2)){
-                    // return make_move(int next_move); //CASTLING_FAILED
-                }else{
-                    *King <<= 2;
-                    UnmakeFlag = 1; //although it is no unmake move, to avoid king-safety check
-
-                }
-            }
-        }
-    }else if(movetype == 2){
-        // En Passant //
-        printf("EN PASSANT IS NOT DEFINED YET\n");
-
-    }else{
-        // Promotions //
-        *Bitboard[1 + promotion_Piece + my_side*6] ^= 1ULL<<to; //if the move is unmade the piece will be deleted again
-    }
-
-    // Captures //
-    if(CaptureFlag == 1){
-        if(UnmakeFlag){
-            *Bitboard[capt_Piece] ^= 1ULL<<to; // puts the captured piece back
-        }else{
-            for(int i=op_side*6; i > 5+op_side*6; i++){
-                if((*Bitboard[i])&(1ULL<<to)){
-                    *Bitboard[i] ^= 1ULL<<to;
-                    *move ^= (i+op_side*6)<<22;
-                    break;
-                }else{printf("NO PIECE TO CAPTURE BUT CAPTUREFLAG ON\n");}
-            }
-        }
-    }else{}
-    // Moving the piece //
-    *Bitboard[Piece]^=(1ULL<<from)|(1ULL<<to);
-    *move ^= 1<<21; //toggling the UnmakeFlag on/off
-    if(UnmakeFlag){
-        return true;
-    }
-    // King-safety //
-    else{
-        return square_attacked(*King);
-    }
-}
-
 void move_generator(){
-    ply = 0;
     move_list = &search_list[ply][0];
-    move_index = 0;
+    move_count = 0;
     if(WHITE){
         OCCUPIED = (BR|BN|BB|BQ|BK|BP|WR|WN|WB|WQ|WK|WP);
         EMPTY = ~(OCCUPIED);
@@ -165,7 +54,7 @@ void genWPawn(){
     U64 PMoves = (WP << 7) & (ENEMY_PIECES) & (~FileA) & (~Rank8); // (~Rank8) -> no promotion
     while (PMoves != 0){
         *move_list++ = CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7)); // search_list(to<<6+from)
-        move_index++;
+        move_count++;
         PMoves&= PMoves - 1; //deletes the move from PMoves after adding it to the search_list
     }
     // 'end'
@@ -173,21 +62,21 @@ void genWPawn(){
     PMoves = (WP << 9) & (ENEMY_PIECES) & (~FileH) & (~Rank8);
     while (PMoves != 0){
         *move_list++ = CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));
-        move_index++;
+        move_count++;
         PMoves&= PMoves - 1;
     }
     // one forward //
     PMoves = (WP << 8) & (EMPTY) & (~Rank8);
     while (PMoves != 0){
         *move_list++ = WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));
-        move_index++;
+        move_count++;
         PMoves&= PMoves - 1;
     }
-    // two forward //
+    // two forward // = double pawn pushes
     PMoves = (WP << 16) & (EMPTY) & (EMPTY << 8) & (Rank4);
     while (PMoves != 0){
-        *move_list++ = WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 16));
-        move_index++;
+        *move_list++ = DOUBLEPAWNPUSH + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 16));
+        move_count++;
         PMoves&= PMoves - 1;
     }
     // promotions //
@@ -195,59 +84,72 @@ void genWPawn(){
         // promotion capture right //
         PMoves = (WP << 7) & (ENEMY_PIECES) & (Rank8) & (~FileA);
         while (PMoves != 0) {
-            *move_list++ = KNIGHT   + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_index++;
-            *move_list++ = BISHOP   + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_index++;
-            *move_list++ = ROOK     + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_index++;
-            *move_list++ = QUEEN    + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_index++;
+            *move_list++ = KNIGHT   + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_count++;
+            *move_list++ = BISHOP   + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_count++;
+            *move_list++ = ROOK     + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_count++;
+            *move_list++ = QUEEN    + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_count++;
             PMoves &= PMoves - 1;
         }
         // promotion capture left //
         PMoves = (WP << 9) & (ENEMY_PIECES) & (Rank8) & (~FileH);
         while (PMoves != 0) {
-            *move_list++ = KNIGHT   + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_index++;
-            *move_list++ = BISHOP   + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_index++;
-            *move_list++ = ROOK     + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_index++;
-            *move_list++ = QUEEN    + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_index++;
+            *move_list++ = KNIGHT   + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_count++;
+            *move_list++ = BISHOP   + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_count++;
+            *move_list++ = ROOK     + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_count++;
+            *move_list++ = QUEEN    + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_count++;
             PMoves &= PMoves - 1;
         }
         // promotion one forward //
         PMoves = (WP << 8) & (EMPTY) & (Rank8);
         while (PMoves != 0) {
-            *move_list++ = KNIGHT   + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));move_index++;
-            *move_list++ = BISHOP   + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));move_index++;
-            *move_list++ = ROOK     + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));move_index++;
-            *move_list++ = QUEEN    + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));move_index++;
+            *move_list++ = KNIGHT   + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));move_count++;
+            *move_list++ = BISHOP   + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));move_count++;
+            *move_list++ = ROOK     + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));move_count++;
+            *move_list++ = QUEEN    + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));move_count++;
             PMoves &= PMoves - 1;
         }
     }
+    // En passant //
+    if(Enpassant_possibility && (WP & Rank5)) {
+        // en passant right
+        PMoves = (WP<<7)&(1ULL<<(doublePawnpushFile+40));
+        if(PMoves){
+            *move_list++ = ENPASSANT + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_count++;
+        }else{}
+        // en passant left
+        PMoves = (WP<<9)&(1ULL<<(doublePawnpushFile+40));
+        if(PMoves){
+            *move_list++ = ENPASSANT + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_count++;
+        }else{}
+    }else{}
 }
 void genBPawn(){ // same as genWPawn just in opposite direction
     // Capture to the right //
     U64 PMoves = (BP >> 7) & (ENEMY_PIECES) & (~FileH) & (~Rank1); // (~Rank8) -> no promotion
     while (PMoves != 0){
         *move_list++ = CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7)); // search_list(from+to)
-        move_index++;
+        move_count++;
         PMoves&= PMoves - 1; //deletes the move from PMoves after adding it to the search_list
     }
     // Capture to the left //
     PMoves = (BP >> 9) & (ENEMY_PIECES) & (~FileA) & (~Rank1);
     while (PMoves != 0){
         *move_list++ = CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));
-        move_index++;
+        move_count++;
         PMoves&= PMoves - 1;
     }
     // one forward //
     PMoves = (BP >> 8) & (EMPTY) & (~Rank1);
     while (PMoves != 0){
         *move_list++ = BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));
-        move_index++;
+        move_count++;
         PMoves&= PMoves - 1;
     }
     // two forward //
     PMoves = (BP >> 16) & (EMPTY) & (EMPTY >> 8) & (Rank5);
     while (PMoves != 0){
-        *move_list++ = BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 16));
-        move_index++;
+        *move_list++ = DOUBLEPAWNPUSH + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 16));
+        move_count++;
         PMoves&= PMoves - 1;
     }
     // promotions //
@@ -255,32 +157,46 @@ void genBPawn(){ // same as genWPawn just in opposite direction
         // promotion capture to the right //
         PMoves = (BP >> 7) & (ENEMY_PIECES) & (Rank1) & (~FileH);
         while (PMoves != 0) {
-            *move_list++ = QUEEN    + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));move_index++;
-            *move_list++ = KNIGHT   + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));move_index++;
-            *move_list++ = BISHOP   + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));move_index++;
-            *move_list++ = ROOK     + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));move_index++;
+            *move_list++ = QUEEN    + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));move_count++;
+            *move_list++ = KNIGHT   + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));move_count++;
+            *move_list++ = BISHOP   + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));move_count++;
+            *move_list++ = ROOK     + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));move_count++;
             PMoves &= PMoves - 1;
         }
         // promotion capture to the left //
         PMoves = (BP >> 9) & (ENEMY_PIECES) & (Rank1) & (~FileA); // &(~FileA) cannot be excluded
         while (PMoves != 0) {
-            *move_list++ = QUEEN    + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));move_index++;
-            *move_list++ = KNIGHT   + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));move_index++;
-            *move_list++ = BISHOP   + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));move_index++;
-            *move_list++ = ROOK     + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));move_index++;
+            *move_list++ = QUEEN    + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));move_count++;
+            *move_list++ = KNIGHT   + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));move_count++;
+            *move_list++ = BISHOP   + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));move_count++;
+            *move_list++ = ROOK     + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));move_count++;
             PMoves &= PMoves - 1;
         }
         // promotion one forward //
         PMoves = (BP >> 8) & (EMPTY) & (Rank1);
         while (PMoves != 0) {
-            *move_list++ = QUEEN    + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));move_index++;
-            *move_list++ = KNIGHT   + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));move_index++;
-            *move_list++ = BISHOP   + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));move_index++;
-            *move_list++ = ROOK     + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));move_index++;
+            *move_list++ = QUEEN    + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));move_count++;
+            *move_list++ = KNIGHT   + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));move_count++;
+            *move_list++ = BISHOP   + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));move_count++;
+            *move_list++ = ROOK     + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));move_count++;
             PMoves &= PMoves - 1;
         }
     }
+    // En passant //
+    if(Enpassant_possibility && (BP & Rank4)) {
+        // en passant right
+        PMoves = (BP>>7)&(1ULL<<(doublePawnpushFile+16));
+        if(PMoves){
+            *move_list++ = ENPASSANT + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));move_count++;
+        }else{}
+        // en passant left
+        PMoves = (WP>>9)&(1ULL<<(doublePawnpushFile+16));
+        if(PMoves){
+            *move_list++ = ENPASSANT + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));move_count++;
+        }else{}
+    }else{}
 }
+
 U64 genDiagonal(U64 DMP){ // DMP: Diagonal Moving Piece
     int i = lsb(DMP);
     // Diagonal Moves //
@@ -342,7 +258,7 @@ void genRook(U64 RBB){ // RBB = Rook BitBoard
 
         while(move != 0){
             *move_list++ =  ((move&OCCUPIED)?CAPTURE:NONE) + color + (lsb(move) << 6) + from;
-            move_index++;
+            move_count++;
             RMoves &= ~move;            // deletes the LSB from RMoves
             move = RMoves&~(RMoves-1);  // takes next LSB from RMoves
         }
@@ -361,7 +277,7 @@ void genBishop(U64 BBB){ // BBB = Bishop BitBoard, same as genRook()
         move = BMoves&~(BMoves-1);
         while(move != 0){
             *move_list++ = ((move&OCCUPIED)?CAPTURE:NONE) + color + (lsb(move) << 6) + from;
-            move_index++;
+            move_count++;
             BMoves &= ~move;
             move = BMoves&~(BMoves-1);
         }
@@ -380,7 +296,7 @@ void genQueen(U64 QBB){ // QBB = Queen BitBoard, same as genRook()
         move = QMoves & ~(QMoves - 1);
         while(move != 0){
             *move_list++ = ((move&OCCUPIED)?CAPTURE:NONE) + color + (lsb(move) << 6) + from;
-            move_index++;
+            move_count++;
             QMoves &= ~move;
             move = QMoves & ~(QMoves - 1);
         }
@@ -399,7 +315,7 @@ void genKnight(U64 NBB){ // NBB = kNight BitBoard
         move = NMoves & ~(NMoves-1);
         while(move != 0){
             *move_list++ = ((move&OCCUPIED)?CAPTURE:NONE) + color + (lsb(move) << 6) + from;
-            move_index++;
+            move_count++;
             NMoves &= ~move;
             move = NMoves & ~(NMoves-1);
         }
@@ -414,32 +330,32 @@ void genKing(U64 KBB){ // KBB = King BitBoard
     int from = lsb(KBB);
     while(move != 0){
         *move_list++ = ((move&OCCUPIED)?CAPTURE:NONE) + color + (lsb(move) << 6) + from;
-        move_index++;
+        move_count++;
         KMoves &= ~move;
         move = KMoves & ~(KMoves-1);
     }
 }
 void genWCastling(){
     if(WK_NOT_MOVED){
-        if(RH1_NOT_MOVED & ((OCCUPIED&F1G1) == 0)){
+        if(RH1_NOT_MOVED && ((OCCUPIED&F1G1) == 0)){
             *move_list++ = CASTLING + WHITEROOK + (2<<6) + 0;
-            move_index++;
+            move_count++;
         }else{}
-        if(RA1_NOT_MOVED & ((OCCUPIED&B1C1D1) == 0)){
+        if(RA1_NOT_MOVED && ((OCCUPIED&B1C1D1) == 0)){
             *move_list++ = CASTLING + WHITEROOK + (4<<6) + 7;
-            move_index++;
+            move_count++;
         }else{}
     }else{}
 }
 void genBCastling(){
     if(BK_NOT_MOVED){
-        if(RH8_NOT_MOVED & ((OCCUPIED&F8G8) == 0)){
+        if(RH8_NOT_MOVED && ((OCCUPIED&F8G8) == 0)){
             *move_list++ = CASTLING + BLACKROOK + (58<<6) + 56;
-            move_index++;
+            move_count++;
         }else{}
-        if(RA8_NOT_MOVED & ((OCCUPIED&B8C8D8) == 0)){
+        if(RA8_NOT_MOVED && ((OCCUPIED&B8C8D8) == 0)){
             *move_list++ = CASTLING + BLACKROOK + (60<<6) + 63;
-            move_index++;
+            move_count++;
         }else{}
     }else{}
 }

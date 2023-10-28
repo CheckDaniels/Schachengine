@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "board.h"
 #include "converter.h"
 
@@ -42,7 +43,7 @@ void move_to_string(int move){
     }
     char notated_move[6];
     sprintf(notated_move,"%c%c%c%c%c%c",file_from, rank_from, file_to, rank_to, promoted_to, type_of_move);
-    printf("%s ",notated_move);
+    printf("%s \n",notated_move);
 }
 void arrayToBitBoard(int rank, int file, char chessboard[rank][file]){
     BR = BN = BB = BQ = BK = BP = WR = WN = WB = WQ = WK = WP = 0ULL;
@@ -98,4 +99,24 @@ void printBoard(){
         }
         printf("]\n");
     }
+}
+
+
+
+U64 reverse_bytes(U64 BitB){
+    //reverses the bytes, not the bits, therefor reverses the rank order
+    //for macOS and Linux: #include <arpa/inet.h>   return be64toh(BB);
+    return _byteswap_uint64(BitB);
+}
+U64 reverse_rank(U64 BitB, int rank){ // BitB: Bitboard
+    //reverses one rank
+    U64 reversedRank = 0;
+    BitB >>= rank*8;                    // shifts the rank to the first bit
+    for (int i = 0; i < 8; i++) {
+        reversedRank <<= 1;             // left-shifts reversedRank to make room for the next bit
+        reversedRank |= (BitB & 1);     // Set the least significant bit of reversedRank to the least significant bit of BitB
+        BitB >>= 1;                     // right-shifts the BitB to process the next bit
+    }
+    reversedRank <<= rank*8;            // shifts the rank back
+    return reversedRank;
 }

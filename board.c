@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "benchmarking.h"
 #include "converter.h"
 #include "board.h"
 
@@ -26,22 +25,18 @@ U64 WP = 0;
 void init_BitBoard() {
     //temp baord
     char board[8][8] = {//  63Bit : end <-------------------
-                            {'r','n',' ',' ','k',' ',' ','r'},
+                            {'r','n','b','q','k','b','n','r'},
                             {'p','p','p','p','p','p','p','p'},
                             {' ',' ',' ',' ',' ',' ',' ',' '},
                             {' ',' ',' ',' ',' ',' ',' ',' '},
                             {' ',' ',' ',' ',' ',' ',' ',' '},
                             {' ',' ',' ',' ',' ',' ',' ',' '},
                             {'P','P','P','P','P','P','P','P'},
-                            {'R','B','B','B','K',' ',' ','R'}
+                            {'R','N','B','Q','K','B','N','R'}
                         //   <------------------ start : 0Bit
     };
     arrayToBitBoard(8, 8,board);
-    printBinary(*(Bitboard[0]), 64);
-    printBinary(B1C1D1, 64);
-    printf("%d\n",lsb(WR));
     printBoard();
-
 }
 
 /// Just some fucking constants ///
