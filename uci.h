@@ -1,8 +1,6 @@
-//
-// Created by Checker_24 on 17.10.2023.
-//
+#pragma once
 
-#ifndef INC_06_CHESS_UCI_H
-#define INC_06_CHESS_UCI_H
+extern const char pieceChars[];
 
-#endif //INC_06_CHESS_UCI_H
+void read_FEN(const char *fen, char board[8][8]);
+int UCI_Protocol();

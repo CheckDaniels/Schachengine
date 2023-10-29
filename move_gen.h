@@ -2,20 +2,10 @@
 #include "board.h"
 #include <stdbool.h>
 
-
 extern U64 OCCUPIED;
 extern U64 EMPTY;
 extern U64 ENEMY_PIECES;
 extern U64 NOT_MY_PIECES;
-
-extern bool WK_NOT_MOVED;
-extern bool BK_NOT_MOVED;
-extern bool RH1_NOT_MOVED;
-extern bool RA1_NOT_MOVED;
-extern bool RH8_NOT_MOVED;
-extern bool RA8_NOT_MOVED;
-extern bool Enpassant_possibility;
-extern int doublePawnpushFile; // 0:FileH, 1:FileG, ..., 7:FileA
 
 enum PIECETYPE : int{
     BLACKPAWN,
@@ -33,10 +23,11 @@ enum PIECETYPE : int{
 };
 enum FLAGS : int{
     NONE,
-    CAPTURE = 1 << 16,
+    CAPTURE = 1 << 16, // the CaptureFlag = QUEEN_SIDE, since only one of them is possible at a time.
+    QUEEN_SIDE = 1 <<16,
     DOUBLEPAWNPUSH = 1<<21
 };
-enum MUMIE : int{
+enum MOVEMENT_TYPE : int{
     NORMAL,
     CASTLING = 1 << 17,
     ENPASSANT = 2 << 17,
@@ -76,8 +67,8 @@ void genBishop(U64 BBB);
 void genQueen(U64 QBB);
 void genKnight(U64 NBB);
 void genKing(U64 KBB);
-
 void genWCastling();
 void genBCastling();
+
 bool square_attacked(U64 square);
 
