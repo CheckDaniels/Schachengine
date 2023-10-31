@@ -8,7 +8,12 @@ U64 EMPTY;
 U64 ENEMY_PIECES;
 U64 NOT_MY_PIECES;
 
-void move_generator(){
+static int move_counter;
+static int* move_list;
+
+void move_generator(int* movelist_ptr, int* move_count){
+    move_counter = 0;
+    move_list = movelist_ptr;
     if(WHITE){
         OCCUPIED = (BR|BN|BB|BQ|BK|BP|WR|WN|WB|WQ|WK|WP);
         EMPTY = ~(OCCUPIED);
@@ -34,6 +39,7 @@ void move_generator(){
         genKing(BK);
         genBCastling();
     }
+    *move_count = move_counter;
 }
 void genWPawn(){
     // taking the last the lsb of the WP Board and deleting it at the 'end', just like indexing
@@ -41,7 +47,7 @@ void genWPawn(){
     U64 PMoves = (WP << 7) & (ENEMY_PIECES) & (~FileA) & (~Rank8); // (~Rank8) -> no promotion
     while (PMoves != 0){
         *move_list++ = CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7)); // search_list(to<<6+from)
-        pseudolegal_move_count++;
+        move_counter++;
         PMoves&= PMoves - 1; //deletes the move from PMoves after adding it to the search_list
     }
     // 'end'
@@ -49,21 +55,21 @@ void genWPawn(){
     PMoves = (WP << 9) & (ENEMY_PIECES) & (~FileH) & (~Rank8);
     while (PMoves != 0){
         *move_list++ = CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));
-        pseudolegal_move_count++;
+        move_counter++;
         PMoves&= PMoves - 1;
     }
     // one forward //
     PMoves = (WP << 8) & (EMPTY) & (~Rank8);
     while (PMoves != 0){
         *move_list++ = WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));
-        pseudolegal_move_count++;
+        move_counter++;
         PMoves&= PMoves - 1;
     }
     // two forward // = double pawn pushes
     PMoves = (WP << 16) & (EMPTY) & (EMPTY << 8) & (Rank4);
     while (PMoves != 0){
         *move_list++ = DOUBLEPAWNPUSH + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 16));
-        pseudolegal_move_count++;
+        move_counter++;
         PMoves&= PMoves - 1;
     }
     // promotions //
@@ -71,131 +77,129 @@ void genWPawn(){
         // promotion capture right //
         PMoves = (WP << 7) & (ENEMY_PIECES) & (Rank8) & (~FileA);
         while (PMoves != 0) {
-            *move_list++ = KNIGHT   + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));pseudolegal_move_count++;
-            *move_list++ = BISHOP   + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));pseudolegal_move_count++;
-            *move_list++ = ROOK     + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));pseudolegal_move_count++;
-            *move_list++ = QUEEN    + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));pseudolegal_move_count++;
+            *move_list++ = KNIGHT + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_counter++;
+            *move_list++ = BISHOP + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_counter++;
+            *move_list++ = ROOK + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_counter++;
+            *move_list++ = QUEEN + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_counter++;
             PMoves &= PMoves - 1;
         }
         // promotion capture left //
         PMoves = (WP << 9) & (ENEMY_PIECES) & (Rank8) & (~FileH);
         while (PMoves != 0) {
-            *move_list++ = KNIGHT   + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));pseudolegal_move_count++;
-            *move_list++ = BISHOP   + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));pseudolegal_move_count++;
-            *move_list++ = ROOK     + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));pseudolegal_move_count++;
-            *move_list++ = QUEEN    + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));pseudolegal_move_count++;
+            *move_list++ = KNIGHT + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_counter++;
+            *move_list++ = BISHOP + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_counter++;
+            *move_list++ = ROOK + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_counter++;
+            *move_list++ = QUEEN + PROMOTION + CAPTURE + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_counter++;
             PMoves &= PMoves - 1;
         }
         // promotion one forward //
         PMoves = (WP << 8) & (EMPTY) & (Rank8);
         while (PMoves != 0) {
-            *move_list++ = KNIGHT   + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));pseudolegal_move_count++;
-            *move_list++ = BISHOP   + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));pseudolegal_move_count++;
-            *move_list++ = ROOK     + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));pseudolegal_move_count++;
-            *move_list++ = QUEEN    + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));pseudolegal_move_count++;
+            *move_list++ = KNIGHT + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));move_counter++;
+            *move_list++ = BISHOP + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));move_counter++;
+            *move_list++ = ROOK + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));move_counter++;
+            *move_list++ = QUEEN + PROMOTION + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 8));move_counter++;
             PMoves &= PMoves - 1;
         }
     }
     // En passant //
-    game_state++;
-    if((game_state->ep_state) && ((WP&Rank5) != 0ULL)) {
+    if(EP_STATE && ((WP & Rank5) != 0)) {
         // en passant right
-        PMoves = (WP<<7)&(1ULL<<((game_state->ep_file)+40));
+        PMoves = ((WP>>1)&(1ULL<<EP_SQUARE)&(~FileA))<<8;
         if(PMoves){
-            *move_list++ = ENPASSANT + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));pseudolegal_move_count++;
+            *move_list++ = ENPASSANT + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 7));move_counter++;
         }
         // en passant left
-        PMoves = (WP<<9)&(1ULL<<((game_state->ep_file)+40));
+        PMoves = ((WP<<1)&(1ULL<<EP_SQUARE)&(~FileH))<<8;
         if(PMoves){
-            *move_list++ = ENPASSANT + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));pseudolegal_move_count++;
+            *move_list++ = ENPASSANT + WHITEPAWN + (lsb(PMoves) << 6) + (lsb(PMoves >> 9));move_counter++;
         }
     }
-    game_state--;
+    EP_STATE = false;
 }
 void genBPawn(){ // same as genWPawn just in opposite direction
     // Capture to the right //
     U64 PMoves = (BP >> 7) & (ENEMY_PIECES) & (~FileH) & (~Rank1); // (~Rank8) -> no promotion
     while (PMoves != 0){
         *move_list++ = CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7)); // search_list(from+to)
-        pseudolegal_move_count++;
-        PMoves&= PMoves - 1; //deletes the move from PMoves after adding it to the search_list
+        move_counter++;
+        PMoves &= PMoves - 1; //deletes the move from PMoves after adding it to the search_list
     }
     // Capture to the left //
     PMoves = (BP >> 9) & (ENEMY_PIECES) & (~FileA) & (~Rank1);
     while (PMoves != 0){
         *move_list++ = CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));
-        pseudolegal_move_count++;
+        move_counter++;
         PMoves&= PMoves - 1;
     }
     // one forward //
     PMoves = (BP >> 8) & (EMPTY) & (~Rank1);
     while (PMoves != 0){
         *move_list++ = BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));
-        pseudolegal_move_count++;
+        move_counter++;
         PMoves&= PMoves - 1;
     }
     // two forward //
     PMoves = (BP >> 16) & (EMPTY) & (EMPTY >> 8) & (Rank5);
     while (PMoves != 0){
         *move_list++ = DOUBLEPAWNPUSH + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 16));
-        pseudolegal_move_count++;
+        move_counter++;
         PMoves&= PMoves - 1;
     }
     // promotions //
-    if ((WP&Rank2)!=0) { // optimized: only generates Promotion if Pawns are on the seventh Rank
+    if ((BP&Rank2)!=0) { // optimized: only generates Promotion if Pawns are on the seventh Rank
         // promotion capture to the right //
         PMoves = (BP >> 7) & (ENEMY_PIECES) & (Rank1) & (~FileH);
         while (PMoves != 0) {
-            *move_list++ = QUEEN    + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));pseudolegal_move_count++;
-            *move_list++ = KNIGHT   + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));pseudolegal_move_count++;
-            *move_list++ = BISHOP   + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));pseudolegal_move_count++;
-            *move_list++ = ROOK     + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));pseudolegal_move_count++;
+            *move_list++ = QUEEN + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7)); move_counter++;
+            *move_list++ = KNIGHT + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7)); move_counter++;
+            *move_list++ = BISHOP + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7)); move_counter++;
+            *move_list++ = ROOK + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7)); move_counter++;
             PMoves &= PMoves - 1;
         }
         // promotion capture to the left //
         PMoves = (BP >> 9) & (ENEMY_PIECES) & (Rank1) & (~FileA); // &(~FileA) cannot be excluded
         while (PMoves != 0) {
-            *move_list++ = QUEEN    + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));pseudolegal_move_count++;
-            *move_list++ = KNIGHT   + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));pseudolegal_move_count++;
-            *move_list++ = BISHOP   + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));pseudolegal_move_count++;
-            *move_list++ = ROOK     + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));pseudolegal_move_count++;
+            *move_list++ = QUEEN + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9)); move_counter++;
+            *move_list++ = KNIGHT + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9)); move_counter++;
+            *move_list++ = BISHOP + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9)); move_counter++;
+            *move_list++ = ROOK + PROMOTION + CAPTURE + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9)); move_counter++;
             PMoves &= PMoves - 1;
         }
         // promotion one forward //
         PMoves = (BP >> 8) & (EMPTY) & (Rank1);
         while (PMoves != 0) {
-            *move_list++ = QUEEN    + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));pseudolegal_move_count++;
-            *move_list++ = KNIGHT   + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));pseudolegal_move_count++;
-            *move_list++ = BISHOP   + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));pseudolegal_move_count++;
-            *move_list++ = ROOK     + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8));pseudolegal_move_count++;
+            *move_list++ = QUEEN + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8)); move_counter++;
+            *move_list++ = KNIGHT + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8)); move_counter++;
+            *move_list++ = BISHOP + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8)); move_counter++;
+            *move_list++ = ROOK + PROMOTION + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 8)); move_counter++;
             PMoves &= PMoves - 1;
         }
     }
     // En passant //
-    game_state++;
-    if((game_state->ep_state) && (BP & Rank4)) {
+    if(EP_STATE && (BP & Rank4)) {
         // en passant right
-        PMoves = (BP>>7)&(1ULL<<(game_state->ep_file+16));
+        PMoves = ((BP<<1)&(1ULL<<EP_SQUARE)&(~FileH))>>8;
         if(PMoves){
-            *move_list++ = ENPASSANT + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7));pseudolegal_move_count++;
+            *move_list++ = ENPASSANT + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 7)); move_counter++;
         }
         // en passant left
-        PMoves = (WP>>9)&(1ULL<<(game_state->ep_file+16));
+        PMoves = ((BP>>1)&(1ULL<<EP_SQUARE)&(~FileA))>>8;
         if(PMoves){
-            *move_list++ = ENPASSANT + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9));pseudolegal_move_count++;
+            *move_list++ = ENPASSANT + BLACKPAWN + (lsb(PMoves) << 6) + (lsb(PMoves << 9)); move_counter++;
         }
     }
-    game_state--;
+    EP_STATE = false;
 }
 
 U64 genDiagonal(U64 DMP){ // DMP: Diagonal Moving Piece
     int i = lsb(DMP);
     // Diagonal Moves //
     U64 m = SD_mask[i / 8 + i % 8];
-    U64 diagonalMoves = (( (OCCUPIED&m) - 2*DMP ) ^ reverse_bytes(reverse_bytes(OCCUPIED & m) - 2 * reverse_bytes(DMP))) & m;
+    U64 diagonalMoves = (( (OCCUPIED& m) - 2*DMP ) ^ reverse_bytes(reverse_bytes(OCCUPIED & m) - 2 * reverse_bytes(DMP))) & m;
     // Anti-diagonal Moves //
     m = AD_mask[7 + i / 8 - i % 8];
-    diagonalMoves |= (((OCCUPIED & m) - 2 * DMP) ^ reverse_bytes(reverse_bytes(OCCUPIED & m) - 2 * reverse_bytes(DMP))) & m;
+    diagonalMoves |= (((OCCUPIED& m) - 2 * DMP) ^ reverse_bytes(reverse_bytes(OCCUPIED & m) - 2 * reverse_bytes(DMP))) & m;
     return diagonalMoves;
 }
 U64 genStraight(U64 SMP){ // SMP: Straight Moving Piece
@@ -206,17 +210,17 @@ U64 genStraight(U64 SMP){ // SMP: Straight Moving Piece
     // Horizontal Moves //
     int rank = i/8;
     m = H_mask[rank];
-    straightMoves |= (( (OCCUPIED) - 2*SMP)^ reverse_rank(reverse_rank(OCCUPIED, rank) - 2*reverse_rank(SMP, rank), rank))&m;
+    straightMoves |= ((OCCUPIED - 2*SMP)^ reverse_rank(reverse_rank(OCCUPIED, rank) - 2*reverse_rank(SMP, rank), rank))&m;
     return straightMoves;
 }
 U64 genKnightSpan(U64 NMP){ // KMP: Night Moving Piece
     U64 NMoves;
     int from = lsb(NMP);
-    if(from>=17){
+    if(from>=18){
         NMoves = KnightSpan<<(from-18);
     }else{
         NMoves = KnightSpan>>(18-from);
-    }if(from%8<4){
+    }if(from%8 < 4){
         NMoves &= (~File_AB);
     }else{
         NMoves &= (~File_GH);
@@ -230,7 +234,7 @@ U64 genKingSpan(U64 KMP){ // KMP: King Moving Piece
         KMoves = KingSpan<<(from-9);
     }else{
         KMoves = KingSpan>>(9-from);
-    }if(from%8<4){
+    }if(from%8 < 4){
         KMoves &=(~FileA);
     }else{
         KMoves &=(~FileH);
@@ -247,8 +251,8 @@ void genRook(U64 RBB){ // RBB = Rook BitBoard
         move = RMoves&~(RMoves-1);      // takes the LSB from RMoves
 
         while(move != 0){
-            *move_list++ =  ((move&OCCUPIED)?CAPTURE:NONE) + ((WHITE)?WHITEROOK:BLACKROOK) + (lsb(move) << 6) + from;
-            pseudolegal_move_count++;
+            *move_list++ = ((move & OCCUPIED) ? CAPTURE : NONE) + ((WHITE) ? WHITEROOK : BLACKROOK) + (lsb(move) << 6) + from;
+            move_counter++;
             RMoves &= ~move;            // deletes the LSB from RMoves
             move = RMoves&~(RMoves-1);  // takes next LSB from RMoves
         }
@@ -265,8 +269,8 @@ void genBishop(U64 BBB){ // BBB = Bishop BitBoard, same as genRook()
         BMoves = genDiagonal(B) & NOT_MY_PIECES;
         move = BMoves&~(BMoves-1);
         while(move != 0){
-            *move_list++ = ((move&OCCUPIED)?CAPTURE:NONE) + ((WHITE)?WHITEBISHOP:BLACKBISHOP) + (lsb(move) << 6) + from;
-            pseudolegal_move_count++;
+            *move_list++ = ((move & OCCUPIED) ? CAPTURE : NONE) + ((WHITE) ? WHITEBISHOP : BLACKBISHOP) + (lsb(move) << 6) + from;
+            move_counter++;
             BMoves &= ~move;
             move = BMoves&~(BMoves-1);
         }
@@ -283,8 +287,8 @@ void genQueen(U64 QBB){ // QBB = Queen BitBoard, same as genRook()
         QMoves = (genStraight(Q)|genDiagonal(Q)) & NOT_MY_PIECES;
         move = QMoves & ~(QMoves - 1);
         while(move != 0){
-            *move_list++ = ((move&OCCUPIED)?CAPTURE:NONE) + ((WHITE)?WHITEQUEEN:BLACKQUEEN) + (lsb(move) << 6) + from;
-            pseudolegal_move_count++;
+            *move_list++ = ((move & OCCUPIED) ? CAPTURE : NONE) + ((WHITE) ? WHITEQUEEN : BLACKQUEEN) + (lsb(move) << 6) + from;
+            move_counter++;
             QMoves &= ~move;
             move = QMoves & ~(QMoves - 1);
         }
@@ -301,8 +305,8 @@ void genKnight(U64 NBB){ // NBB = kNight BitBoard
         NMoves = genKnightSpan(N) & NOT_MY_PIECES;
         move = NMoves & ~(NMoves-1);
         while(move != 0){
-            *move_list++ = ((move&OCCUPIED)?CAPTURE:NONE) + ((WHITE)?WHITEKNIGHT:BLACKKNIGHT) + (lsb(move) << 6) + from;
-            pseudolegal_move_count++;
+            *move_list++ = ((move & OCCUPIED) ? CAPTURE : NONE) + ((WHITE) ? WHITEKNIGHT : BLACKKNIGHT) + (lsb(move) << 6) + from;
+            move_counter++;
             NMoves &= ~move;
             move = NMoves & ~(NMoves-1);
         }
@@ -315,35 +319,33 @@ void genKing(U64 KBB){ // KBB = King BitBoard
     U64 move = KMoves & ~(KMoves-1);
     int from = lsb(KBB);
     while(move != 0){
-        *move_list++ = ((move&OCCUPIED)?CAPTURE:NONE) + ((WHITE)?WHITEKING:BLACKKING) + (lsb(move) << 6) + from;
-        pseudolegal_move_count++;
+        *move_list++ = ((move & OCCUPIED) ? CAPTURE : NONE) + ((WHITE) ? WHITEKING : BLACKKING) + (lsb(move) << 6) + from;
+        move_counter++;
         KMoves &= ~move;
         move = KMoves & ~(KMoves-1);
     }
 }
 void genWCastling(){
-    int Castlestate = (game_state+=2)->castling_rights; game_state-=2;
-    if(Castlestate!=0){
-        if((Castlestate!=1) && ((OCCUPIED&F1G1) == 0)){
-            *move_list++ = CASTLING + WHITEROOK + (2<<6) + 0;
-            pseudolegal_move_count++;
+    if(CASTLING_RIGHTS&3){
+        if((CASTLING_RIGHTS&1) && ((OCCUPIED&F1G1) == 0)){
+            *move_list++ = WHITE_KS_CASTLING;
+            move_counter++;
         }
-        if((Castlestate!=2) && ((OCCUPIED&B1C1D1) == 0)){
-            *move_list++ = CASTLING+ QUEEN_SIDE + WHITEROOK + (4<<6) + 7;
-            pseudolegal_move_count++;
+        if((CASTLING_RIGHTS&2) && ((OCCUPIED&B1C1D1) == 0)){
+            *move_list++ = WHITE_QS_CASTLING;
+            move_counter++;
         }
     }
 }
 void genBCastling(){
-    int Castlestate = (game_state+=2)->castling_rights; game_state-=2;
-    if(Castlestate!=0){
-        if((Castlestate!=1) && ((OCCUPIED&F8G8) == 0)){
-            *move_list++ = CASTLING + BLACKROOK + (58<<6) + 56;
-            pseudolegal_move_count++;
+    if(CASTLING_RIGHTS&12){
+        if((CASTLING_RIGHTS&4) && ((OCCUPIED&F8G8) == 0)){
+            *move_list++ = BLACK_KS_CASTLING;
+            move_counter++;
         }
-        if((Castlestate!=2) && ((OCCUPIED&B8C8D8) == 0)){
-            *move_list++ = CASTLING + QUEEN_SIDE + BLACKROOK + (60<<6) + 63;
-            pseudolegal_move_count++;
+        if((CASTLING_RIGHTS&8) && ((OCCUPIED&B8C8D8) == 0)){
+            *move_list++ = BLACK_QS_CASTLING;
+            move_counter++;
         }
     }
 }
@@ -364,10 +366,10 @@ bool square_attacked(U64 square){
         return true;
     }
     // Pawn
-    U64 pawn_attacks = (WHITE)? (square << 7) | (square << 9) : (square >> 7) | (square >> 9);
+    U64 pawn_attacks = (WHITE)? ((square << 7)&(~FileA)) | ((square << 9)&(~FileH)): ((square >> 7)&(~FileH)) | ((square >> 9)&(~FileA));
     if(pawn_attacks & (*Bitboard[op_side * 6])){
         return true;
-    }else{}
+    }
     // King
     U64 king_attacks = genKingSpan(square);
     if(king_attacks & (*Bitboard[5 + op_side * 6])){

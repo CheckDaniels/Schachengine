@@ -132,11 +132,4 @@ extern U64 WQ;
 extern U64 WK;
 extern U64 WP;
 
-//U64 NO_PIECES;
-//U64 WHITE_PIECES;
-//U64 BLACK_PIECES;
-
 void init_BitBoard();
-
-
-//?int moveList[1024][2];

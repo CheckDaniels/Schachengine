@@ -8,7 +8,7 @@ extern U64 ENEMY_PIECES;
 extern U64 NOT_MY_PIECES;
 
 enum PIECETYPE : int{
-    BLACKPAWN,
+    BLACKPAWN = 0,
     BLACKKNIGHT = 1<<12,
     BLACKBISHOP = 2<<12,
     BLACKROOK = 3<<12,
@@ -23,7 +23,7 @@ enum PIECETYPE : int{
 };
 enum FLAGS : int{
     NONE,
-    CAPTURE = 1 << 16, // the CaptureFlag = QUEEN_SIDE, since only one of them is possible at a time.
+    CAPTURE = 1 << 16, // the CaptureFlag = QUEEN_SIDE flag, since only one of them is possible at a time.
     QUEEN_SIDE = 1 <<16,
     DOUBLEPAWNPUSH = 1<<21
 };
@@ -34,32 +34,24 @@ enum MOVEMENT_TYPE : int{
     PROMOTION = 3 << 17
 };
 enum PROMOTION_TYPE : int{
-    KNIGHT,
+    KNIGHT = 0,
     BISHOP = 1 << 19,
     ROOK = 2 << 19,
     QUEEN = 3 << 19
 };
-enum CAPTURED_PIECE : int{
-    CAPT_BLACKPAWN,
-    CAPT_BLACKKNIGHT = 1<<23,
-    CAPT_BLACKBISHOP = 2<<23,
-    CAPT_BLACKROOK = 3<<23,
-    CAPT_BLACKQUEEN = 4<<23,
-    CAPT_BLACKKING = 5<<23,
-    CAPT_WHITEPAWN = 6<<23,
-    CAPT_WHITEKNIGHT = 7<<23,
-    CAPT_WHITEBISHOP = 8<<23,
-    CAPT_WHITEROOK = 9<<23,
-    CAPT_WHITEQUEEN = 10<<23,
-    CAPT_WHITEKING = 11<<23
+enum CASTLINGS : int{
+    WHITE_KS_CASTLING = CASTLING + WHITEROOK + (2 << 6) + 0,
+    WHITE_QS_CASTLING = CASTLING + QUEEN_SIDE + WHITEROOK + (4 << 6) + 7,
+    BLACK_KS_CASTLING = CASTLING + BLACKROOK + (58 << 6) + 56,
+    BLACK_QS_CASTLING = CASTLING + QUEEN_SIDE + BLACKROOK + (60 << 6) + 63
 };
 
 
-void move_generator();
+void move_generator(int* movelist_ptr, int* move_count);
 void genWPawn();
 void genBPawn();
-U64 genDiagonal(U64 DP);
-U64 genStraight(U64 SP);
+U64 genDiagonal(U64 DMP);
+U64 genStraight(U64 SMP);
 U64 genKnightSpan(U64 NMP);
 U64 genKingSpan(U64 KMP);
 void genRook(U64 RBB);

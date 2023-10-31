@@ -52,34 +52,41 @@ void read_FEN(const char *fen, char board[8][8]) {
             i++;
             if(fen[i] == 'w'){
                 WHITE = true;
+                SIGN = 1;
             }else if(fen[i] == 'b'){
                 WHITE = false;
+                SIGN = -1;
             }else{
-                printf("Invalid Board");
+                printf("Invalid Board\n");
                 break;
             }
 
             i+=2;
+            int8_t white_castling;
+            int8_t black_castling;
+
             // White-Castling_rights //
             if((fen[i]=='K')&&(fen[i+1]=='Q')){
-                game_list[MAX_PLY+1+WHITE].castling_rights = 3; i+=2;
+                white_castling = 3; i+=2;
             }else if(fen[i]=='K'){
-                game_list[MAX_PLY+1+WHITE].castling_rights = 2; i++;
+                white_castling = 1; i++;
             }else if(fen[i]=='Q'){
-                game_list[MAX_PLY+1+WHITE].castling_rights = 1; i++;
+                white_castling = 2; i++;
             }else{
-                game_list[MAX_PLY+1+WHITE].castling_rights = 0;
+                white_castling = 0;
             }
             // Black-Castling_rights //
             if((fen[i]=='k')&&(fen[i+1]=='q')){
-                game_list[MAX_PLY+2-WHITE].castling_rights = 3; i+=2;
+                black_castling = 3; i+=2;
             }else if(fen[i]=='k'){
-                game_list[MAX_PLY+2-WHITE].castling_rights = 2; i++;
+                black_castling = 1; i++;
             }else if(fen[i]=='q'){
-                game_list[MAX_PLY+2-WHITE].castling_rights = 1; i++;
+                black_castling = 2; i++;
             }else{
-                game_list[MAX_PLY+2-WHITE].castling_rights = 0;
+                black_castling = 0;
             }
+            CASTLING_RIGHTS = (black_castling<<2) + white_castling;
+            printf("Castle-state: %d\n", CASTLING_RIGHTS);
             if(fen[i]=='-'){
                 i+=2;
             }else{
@@ -88,18 +95,20 @@ void read_FEN(const char *fen, char board[8][8]) {
 
             //En Passant//
             if(fen[i] != '-'){
-                game_list[MAX_PLY+1].ep_state = 1;
+                EP_STATE = true;
                 switch(fen[i]){
-                    case 'a': printf("FileA\n");game_list[MAX_PLY+1].ep_file = 7; break;
-                    case 'b': printf("FileB\n");game_list[MAX_PLY+1].ep_file = 6; break;
-                    case 'c': printf("FileC\n");game_list[MAX_PLY+1].ep_file = 5; break;
-                    case 'd': printf("FileD\n");game_list[MAX_PLY+1].ep_file = 4; break;
-                    case 'e': printf("FileE\n");game_list[MAX_PLY+1].ep_file = 3; break;
-                    case 'f': printf("FileF\n");game_list[MAX_PLY+1].ep_file = 2; break;
-                    case 'g': printf("FileG\n");game_list[MAX_PLY+1].ep_file = 1; break;
-                    case 'h': printf("FileH\n");game_list[MAX_PLY+1].ep_file = 0; break;
+                    case 'a': printf("FileA\n"); EP_SQUARE = 7; break;
+                    case 'b': printf("FileB\n"); EP_SQUARE = 6; break;
+                    case 'c': printf("FileC\n"); EP_SQUARE = 5; break;
+                    case 'd': printf("FileD\n"); EP_SQUARE = 4; break;
+                    case 'e': printf("FileE\n"); EP_SQUARE = 3; break;
+                    case 'f': printf("FileF\n"); EP_SQUARE = 2; break;
+                    case 'g': printf("FileG\n"); EP_SQUARE = 1; break;
+                    case 'h': printf("FileH\n"); EP_SQUARE = 0; break;
                 }
                 i++;
+                EP_SQUARE += ((fen[i]-'0')-2)*8;
+                printf("%d\n", EP_SQUARE);
             }
             i++;
             break;

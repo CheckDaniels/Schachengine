@@ -42,8 +42,8 @@ void move_to_string(int move){
             }break;
     }
     char notated_move[6];
-    sprintf(notated_move,"%c%c%c%c%c%c",file_from, rank_from, file_to, rank_to, promoted_to, type_of_move);
-    printf("%s \n",notated_move);
+    sprintf(notated_move,"%c%c%c%c%c",file_from, rank_from, file_to, rank_to, promoted_to/*, type_of_move*/);
+    printf("%s ",notated_move);
 }
 void arrayToBitBoard(int rank, int file, char chessboard[rank][file]){
     BR = BN = BB = BQ = BK = BP = WR = WN = WB = WQ = WK = WP = 0ULL;
@@ -93,6 +93,7 @@ void printBoard(){
             if((WQ & (1ULL << (i * 8 + j))) != 0) { printf("Q");}
             if((WK & (1ULL << (i * 8 + j))) != 0) { printf("K");}
             if((WP & (1ULL << (i * 8 + j))) != 0) { printf("P");}
+            //if((F8G8 & (1ULL << (i * 8 + j))) != 0) { printf("X");}
             if((~(BR|BN|BB|BQ|BK|BP|WR|WN|WB|WQ|WK|WP)&(1ULL<<(i*8+j)))!=0){ printf(" ");}
             //if((Rank3 & (1ULL << (i * 8 + j))) != 0) { printf("X");}
             if(j!=0){printf(", ");}

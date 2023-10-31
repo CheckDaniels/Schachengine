@@ -1,7 +1,7 @@
 #pragma once
 #include "board.h"
 
-int lsb(U64 b);
+int lsb(U64 bit);
 void move_to_string(int move);
 void arrayToBitBoard(int rank, int file, char chessboard[rank][file]);
 void printBinary(U64 bNum, int bitcount);

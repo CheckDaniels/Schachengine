@@ -1,51 +1,42 @@
 #pragma once
+#include <stdbool.h>
 #define my_side WHITE
 #define op_side (1-WHITE)
-#define unmake_move(x) make_move(x)
-#define MAX_PLY 3
+#define neg_SIGN (SIGN*(-1))
+#define MAX_PLY 5
+#define copy_board()                                                                                    \
+    U64 tBP, tBN, tBB, tBR, tBQ, tBK, tWP, tWN, tWB, tWR, tWQ, tWK/*, tOCCUPIED*/;                      \
+    tBP = BP; tBN = BN; tBB = BB; tBR = BR; tBQ = BQ; tBK = BK;                                         \
+    tWP = WP; tWN = WN; tWB = WB; tWR = WR; tWQ = WQ; tWK = WK;                                         \
+    int8_t tCASTLING_RIGHTS;                                                                            \
+    bool tEP_STATE;                                                                                     \
+    tCASTLING_RIGHTS = CASTLING_RIGHTS;                                                                 \
+    tEP_STATE = EP_STATE;                                                                               \
+    //tOCCUPIED = OCCUPIED;                                                                             \
 
-extern int perftNodeCounter;
-extern int perftCaptCounter;
+#define take_back()                                                                 \
+    BP = tBP; BN = tBN; BB = tBB; BR = tBR; BQ = tBQ; BK = tBK;                     \
+    WP = tWP; WN = tWN; WB = tWB; WR = tWR; WQ = tWQ; WK = tWK;                     \
+    CASTLING_RIGHTS = tCASTLING_RIGHTS;                                             \
+    EP_STATE = tEP_STATE;                                                           \
+    //OCCUPIED = tOCCUPIED;                                                         \
+
+
+extern unsigned long long perftNodeCounter;
+extern unsigned long long perftCaptCounter;
 extern int perftEPCounter;
 extern int perftCastleCounter;
 extern int perftMateCounter;
-
-//extern int COUNTERLIST[];
-//extern int x;
+extern int perftPromotionCounter;
 
 extern bool WHITE;
-
-//captured pieces, en passant, castling-rights and fifty-move rule//
-// int search_list[][]; Stores the generated moves for each ply inside an 2D array in int format
-// 32 bits are enough to store all the important data of a move
-// Bit: 0-5     6-11    12-15       16             17-18                                   19-20                21      (22)            (23-26) only for unmaking moves
-//      from    to      Piece type  |CaptureFlag|  (None/Castling/en passant/Promotion)    Promotion:N/B/R/Q    dppFlag (UnmakeFlag)    (captured_Piece: BP/BN/BR/BQ/BK/WP/WN/WB/WR/WQ/WK)
-//                                  |Castling-side| = King-side/Queen-side
-// captured pieces will be added after the move has been made in make_move()
-// Piece types: {BP, BN, BB, BR, BQ, BK, WP, WN, WB, WR, WQ, WK}
-
-extern int search_list[][256];
-extern int *move_list;
-extern int pseudolegal_move_count;
-extern int counter_list[];
-
-// Stores additional Information about the Game state (i.e.: if castling/en passant is possible in a given position)
-// {ep_state, castling rights, half move clock, hash}
-// ep_state: 8Bit
-// castling_rights: 8 bits
-// half move clock: 8 bits
-// hash: 64 bit
-struct Game_Status{
-    bool ep_state;
-    int ep_file;
-    int castling_rights; // 0 Castling false, 1 KS-Castling false, 2 QS-Castling false, 3 Castling true
-    //char half_move_clock;
-};
-extern struct Game_Status game_list[];
-extern struct Game_Status *game_state;
+extern int8_t SIGN;
+extern bool EP_STATE;
+extern int8_t EP_SQUARE;
+extern int8_t CASTLING_RIGHTS;
+extern bool Checkmate;
 
 
-int search(int ply);
-bool make_move(int* move);
-//void copy_board();
-//void take_back();
+void perft_driver(int ply);
+void perft_test(int ply);
+void search(int ply);

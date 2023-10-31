@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <stdint.h>
 #include "converter.h"
 #include "board.h"
 
@@ -36,10 +36,11 @@ void init_BitBoard() {
                         //   <------------------ start : 0Bit
     };
     arrayToBitBoard(8, 8,board);
+    printBinary(reverse_rank(BN,5), 64);
     printBoard();
 }
 
-/// Just some fucking constants ///
+/// Just some constants ///
 
 // Files //
 const U64 FileA = 0x8080808080808080ULL;
@@ -57,7 +58,7 @@ const U64 Queenside = FileA|FileB|FileC|FileD;
 const U64 Kingside = FileE|FileF|FileG|FileH;
 
 // Ranks //
-const U64 Rank1 = 0xFF;
+const U64 Rank1 = 0xFFULL;
 const U64 Rank2 = Rank1 << (8 * 1);
 const U64 Rank3 = Rank1 << (8 * 2);
 const U64 Rank4 = Rank1 << (8 * 3);
@@ -135,7 +136,7 @@ const U64 KingSpan = 0x70507ULL;
 const U64 B1 = 0x40ULL;
 const U64 C1 = 0x20ULL;
 const U64 D1 = 0x10ULL;
-const U64 E1 = 0x10ULL;
+const U64 E1 = 0x8ULL;
 const U64 F1 = 0x4ULL;
 const U64 G1 = 0x2ULL;
 
