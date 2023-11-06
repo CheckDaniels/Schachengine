@@ -4,6 +4,23 @@
 
 typedef uint_fast64_t U64;
 
+extern U64 *const Bitboard[];
+extern U64 BP;
+extern U64 BN;
+extern U64 BB;
+extern U64 BR;
+extern U64 BQ;
+extern U64 BK;
+extern U64 WP;
+extern U64 WN;
+extern U64 WB;
+extern U64 WR;
+extern U64 WQ;
+extern U64 WK;
+
+
+void init_BitBoard();
+
 // Files //
 extern const U64 FileA;
 extern const U64 FileB;
@@ -88,8 +105,6 @@ extern const U64 G1;
 
 extern const U64 B1C1D1;
 extern const U64 F1G1;
-//extern const U64 C1D1E1;
-//extern const U64 E1F1G1;
 
 extern const U64 B8;
 extern const U64 C8;
@@ -100,8 +115,7 @@ extern const U64 G8;
 
 extern const U64 B8C8D8;
 extern const U64 F8G8;
-//extern const U64 C8D8E8;
-//extern const U64 E8F8G8;
+
 /*
      * 1000000100000000000000000000000000000000000000000000000000000000
      * 0100001000000000000000000000000000000000000000000000000000000000
@@ -117,19 +131,3 @@ extern const U64 F8G8;
      * 0000000000000000000000000000000000000000000000001111111100000000
      * 0000000000000000111111111111111111111111111111110000000000000000
 */
-
-extern U64 *Bitboard[];
-extern U64 BR;
-extern U64 BN;
-extern U64 BB;
-extern U64 BQ;
-extern U64 BK;
-extern U64 BP;
-extern U64 WR;
-extern U64 WN;
-extern U64 WB;
-extern U64 WQ;
-extern U64 WK;
-extern U64 WP;
-
-void init_BitBoard();

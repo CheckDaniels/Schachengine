@@ -2,7 +2,7 @@
 #include "board.h"
 #include "converter.h"
 
-int lsb(U64 bit) { // Returns the number of trailing zeros of any 64 bit binary number
+int lsb(U64 bit) { // Returns the number of trailing zeros of any 64-bit binary number
     if (bit == 0) {
         return 64;  // Number of bits in a 64-bit integer
     }
@@ -14,7 +14,7 @@ int lsb(U64 bit) { // Returns the number of trailing zeros of any 64 bit binary 
     return count;
 }
 
-void move_to_string(int move){
+char* move_to_string(int move){
     int from = move & 63;
     int to = (move>>6) & 63;
     int piecetype = (move>>12)&15;
@@ -22,49 +22,69 @@ void move_to_string(int move){
     int movetype = (move>>17)&3;
     int promotion = (move>>19)&3;
 
-    char file_from = (7-from%8)+97;
-    char rank_from = (from/8)+49;
-    char file_to = (7-to%8)+97;
-    char rank_to = (to/8)+49;
-
     char promoted_to = ' ';
-    char type_of_move;
-    switch(movetype){
-        case 0: type_of_move = 'N'; break;
-        case 1: type_of_move = 'C'; break;
-        case 2: type_of_move = 'E'; break;
-        case 3: type_of_move = 'P';
-            switch(promotion){
-                case 0: promoted_to = 'q'; break;
-                case 1: promoted_to = 'n'; break;
-                case 2: promoted_to = 'b'; break;
-                case 3: promoted_to = 'r'; break;
-            }break;
+    if(movetype == 3){
+        switch(promotion){
+            case 0: promoted_to = 'q'; break;
+            case 1: promoted_to = 'n'; break;
+            case 2: promoted_to = 'b'; break;
+            case 3: promoted_to = 'r'; break;
+            }
     }
-    char notated_move[6];
-    sprintf(notated_move,"%c%c%c%c%c",file_from, rank_from, file_to, rank_to, promoted_to/*, type_of_move*/);
-    printf("%s ",notated_move);
+
+    // if (movetype == castling) converts rook move to king move
+    else if(movetype==1)
+    {
+        if(from==0) {
+            from = 3;
+            to = 1;
+        }else if(from==7) {
+            from = 3;
+            to = 5;
+        }else if(from==56) {
+            from = 59;
+            to = 57;
+        }else {
+            from = 59;
+            to = 61;
+        }
+    }
+
+    // convert integer to coordinates
+    char file_from = (7-from%8)+'a';
+    char rank_from = (from/8)+'1';
+    char file_to = (7-to%8)+'a';
+    char rank_to = (to/8)+'1';
+
+    static char notated_move[6];
+    sprintf(notated_move,"%c%c%c%c%c%c",file_from, rank_from, file_to, rank_to, promoted_to, '\0');
+    return notated_move;
+}
+void print_movestring(char* move){
+    for (int i = 0; i < 5; i++)
+        printf("%c", *move++);
+    printf(" ");
 }
 void arrayToBitBoard(int rank, int file, char chessboard[rank][file]){
     BR = BN = BB = BQ = BK = BP = WR = WN = WB = WQ = WK = WP = 0ULL;
     for (int rank = 0; rank < 8; rank++) {
         for (int file = 0; file < 8; file++) {
-            int Piece = chessboard[rank][file];
-            if (Piece != (int)' ') {
+            char Piece = chessboard[rank][file];
+            if (Piece != ' ') {
                 // Set the bit at the (rank, file) position for the corresponding piece type
                 switch (Piece){
-                    case (int)'r': BR |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
-                    case (int)'n': BN |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
-                    case (int)'b': BB |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
-                    case (int)'q': BQ |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
-                    case (int)'k': BK |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
-                    case (int)'p': BP |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
-                    case (int)'R': WR |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
-                    case (int)'N': WN |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
-                    case (int)'B': WB |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
-                    case (int)'Q': WQ |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
-                    case (int)'K': WK |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
-                    case (int)'P': WP |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
+                    case 'r': BR |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
+                    case 'n': BN |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
+                    case 'b': BB |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
+                    case 'q': BQ |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
+                    case 'k': BK |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
+                    case 'p': BP |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
+                    case 'R': WR |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
+                    case 'N': WN |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
+                    case 'B': WB |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
+                    case 'Q': WQ |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
+                    case 'K': WK |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
+                    case 'P': WP |= 1ULL << ((7 - rank) * 8 + (7 - file)); break;
 
                 }
             }
@@ -105,12 +125,12 @@ void printBoard(){
 
 
 U64 reverse_bytes(U64 BitB){
-    //reverses the bytes, not the bits, therefor reverses the rank order
+    //reverses the bytes, not the bits, thus reverses the rank order
     //for macOS and Linux: #include <arpa/inet.h>   return be64toh(BB);
     return _byteswap_uint64(BitB);
 }
 U64 reverse_rank(U64 BitB, int rank){ // BitB: Bitboard
-    //reverses one rank
+    //reverses the bits of a rank
     U64 reversedRank = 0;
     BitB >>= rank*8;                    // shifts the rank to the first bit
     for (int i = 0; i < 8; i++) {

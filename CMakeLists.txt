@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 project(06_Chess C)
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast")
 set(CMAKE_C_STANDARD 23)
 
 add_executable(06_Chess uci.c
@@ -19,6 +19,5 @@ add_executable(06_Chess uci.c
         main.c
         benchmarking.c
         makemove.c
-        makemove.h
         makemove.c
 )

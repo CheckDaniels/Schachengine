@@ -1,4 +1,3 @@
-#include <stdint.h>
 #include "converter.h"
 #include "board.h"
 
@@ -6,20 +5,21 @@
 /////////////////////
 /// THE BITBOARDS ///
 /////////////////////
-U64 *Bitboard[12] = {&BP, &BN, &BB, &BR, &BQ, &BK, &WP, &WN, &WB, &WR, &WQ, &WK};
+U64 *const Bitboard[12] = { &BP, &WP, &BN, &WN, &BB, &WB, &BR, &WR, &BQ, &WQ, &BK, &WK};
 
-U64 BR = 0;
-U64 BN = 0;
-U64 BB = 0;
-U64 BQ = 0;
-U64 BK = 0;
-U64 BP = 0;
-U64 WR = 0;
-U64 WN = 0;
-U64 WB = 0;
-U64 WQ = 0;
-U64 WK = 0;
-U64 WP = 0;
+U64 BP = 0; // Black Pawn Bitboard
+U64 BN = 0; // Black kNight Bitboard
+U64 BB = 0; // Black Bishop Bitboard
+U64 BR = 0; // Black Rook Bitboard
+U64 BQ = 0; // Black Queen Bitboard
+U64 BK = 0; // Black King Bitboard
+U64 WP = 0; // White Pawn Bitboard
+U64 WN = 0; // White kNight Bitboard
+U64 WB = 0; // White Bishop Bitboard
+U64 WR = 0; // White Rook Bitboard
+U64 WQ = 0; // White Queen Bitboard
+U64 WK = 0; // White King Bitboard
+
 
 
 void init_BitBoard() {
@@ -109,7 +109,7 @@ const U64 AD15 = (AD14&AD14-1)>>1;
 
 // Ray-Masks //
 // for sliding pieces: Queen, Rook, Bishop
-const U64 V_mask[8] = {FileA, FileB, FileC, FileD, FileE, FileF, FileG, FileH};
+const U64 V_mask[8] = {FileH, FileG, FileF, FileE, FileD, FileC, FileB, FileA};
 const U64 H_mask[8] = {Rank1, Rank2, Rank3, Rank4, Rank5, Rank6, Rank7, Rank8};
 const U64 SD_mask[15] = {SD1, SD2, SD3, SD4, SD5, SD6, SD7, mainSDiagonal, SD9, SD10, SD11, SD12, SD13, SD14, SD15};
 const U64 AD_mask[15] = {AD1, AD2, AD3, AD4, AD5, AD6, AD7, mainADiagonal, AD9, AD10, AD11, AD12, AD13, AD14, AD15};
@@ -142,8 +142,6 @@ const U64 G1 = 0x2ULL;
 
 const U64 B1C1D1 = B1|C1|D1;
 const U64 F1G1 = F1|G1;
-const U64 C1D1E1 = C1|D1|E1;
-const U64 E1F1G1 = E1|F1|G1;
 
 const U64 B8 = 0x4000000000000000ULL;
 const U64 C8 = 0x2000000000000000ULL;
@@ -154,5 +152,3 @@ const U64 G8 = 0x200000000000000ULL;
 
 const U64 B8C8D8 = B8|C8|D8;
 const U64 F8G8 = F8|G8;
-const U64 C8D8E8 = C8|D8|E8;
-const U64 E8F8G8 = E8|F8|G8;

@@ -1,42 +1,41 @@
 #include <stdio.h>
-#include <stdint.h>
 #include "board.h"
 #include "converter.h"
 #include "move_gen.h"
 #include "search.h"
-#include "makemove.h"
 
 
 bool WHITE;
 int8_t SIGN;
 bool EP_STATE;
-int8_t EP_SQUARE;
+int8_t EP_PAWN;
 int8_t CASTLING_RIGHTS;
 bool Checkmate;
 
-
+void think(int ply){
+    WHITE ^= 1; SIGN *= -1;
+    search(ply);
+}
 
 void search(int ply) {
     WHITE ^= 1; SIGN *= -1;
     if (ply==0){
-        // evaluate //
+        // evaluate() //
         perftNodeCounter++;
     }else {
+
         // creates an empty move list
         int move_list[256];
-        int *movelist_ptr = move_list;
         int move_count = 0;
 
         // move generator
-        move_generator(movelist_ptr, &move_count);
+        move_generator(move_list, &move_count);
 
+        Checkmate = true;
         // copies all the bitboards
         copy_board()
-        Checkmate = true;
-        for (int i = 0; i < move_count; i++) {
-
-            //move_to_string(*movelist_ptr);
-            if (!make_move(movelist_ptr++)) {
+        for (int* ptr = move_list; ptr < move_list + move_count; ptr++) {
+            if (!make_move(*ptr)) {
                 take_back()
                 continue;
             }
@@ -45,7 +44,7 @@ void search(int ply) {
             take_back()
         }
         if (Checkmate){
-            // return 10000000*side //
+            // return 10000000*SIGN //
         }
     }
     WHITE^=1; SIGN *= -1;
@@ -65,22 +64,19 @@ int perftMateCounter = 0;
 int perftPromotionCounter = 0;
 
 void perft_test(int ply){
-    WHITE^=1; SIGN *= -1;
     printf("\n     Performance test\n\n");
-
     // move list //
     int move_list[256];
-    int *movelist_ptr = move_list;
     int move_count = 0;
 
     // move generator
-    move_generator(movelist_ptr, &move_count);
+    move_generator(move_list, &move_count);
 
     // loop over generated moves
-    for (int i = 0; i < move_count; i++) {
-        move_to_string(*movelist_ptr);
+    for (int* ptr = move_list; ptr < move_list + move_count; ptr++) {
+        print_movestring(move_to_string(*ptr));
         copy_board()
-        if (!make_move(movelist_ptr++)) {
+        if (!make_move(*ptr)) {
             take_back()
             continue;
         }
@@ -115,15 +111,14 @@ void perft_driver(int ply){
 
         // move list //
         int move_list[256];
-        int *movelist_ptr = move_list;
         int move_count = 0;
         // move generator
-        move_generator(movelist_ptr, &move_count);
+        move_generator(move_list, &move_count);
 
         // loop over generated moves
-        for (int i = 0; i < move_count; i++) {
+        for (int* ptr = move_list; ptr < move_list + move_count; ptr++) {
             copy_board()
-            if (!make_move(movelist_ptr++)) {
+            if (!make_move(*ptr)) {
                 take_back()
                 continue;
             }
