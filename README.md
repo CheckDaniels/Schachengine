@@ -4,5 +4,5 @@ Ein Suchalgorithmus und eine Evaluationsfunktion fehlen noch.
 
 Momentan läuft das Programm nur auf Windows.
 
-C-Verion:  C Standard 23
+C-Verion:  C Standard 23 \n
 Compiler:  MinGW-w64
